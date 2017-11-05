@@ -1,0 +1,6 @@
+[package]
+name = "homespring"
+version = "0.1.0"
+authors = ["Addison Bean <addisonbean@gmail.com>"]
+
+[dependencies]
