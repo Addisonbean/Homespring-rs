@@ -1,5 +1,7 @@
 use std::rc::{Rc, Weak};
-use std::cell::RefCell;
+use std::cell::{RefCell, RefMut, Ref};
+
+use tick::Tick;
 
 #[derive(Debug)]
 pub enum RiverNodeType {
@@ -89,8 +91,37 @@ impl RiverNode {
         }
     }
 
+    pub fn borrow_child(&self, n: usize) -> Ref<RiverNode> {
+        self.children[n].borrow()
+    }
+
+    pub fn borrow_mut_child(&self, n: usize) -> RefMut<RiverNode> {
+        self.children[n].borrow_mut()
+    }
+
     pub fn add_child(&mut self, child: Rc<RefCell<RiverNode>>) {
         self.children.push(child);
+    }
+
+    pub fn tick(&mut self, tick: Tick) {
+        use tick::PropagationOrder::*;
+        match tick.propagation_order() {
+            PostOrder => {
+                for i in 0..self.children.len() {
+                    self.borrow_mut_child(i).tick(tick);
+                }
+                // println!("{:?} ticked", self.node_type);
+                tick.run(self);
+            },
+            PreOrder => {
+                // println!("{:?} ticked", self.node_type);
+                tick.run(self);
+                for i in 0..self.children.len() {
+                    self.borrow_mut_child(i).tick(tick);
+                }
+            },
+            _ => unimplemented!(),
+        }
     }
 
     pub fn parse_program(code: &str) -> Rc<RefCell<RiverNode>> {
@@ -100,13 +131,14 @@ impl RiverNode {
             Some(name) => {
                 Rc::new(RefCell::new(RiverNode::new(name)))
             },
-            None => panic!(), // it's the quine thing
+            None => unimplemented!(), // it's the quine thing
         };
 
         let mut current_node = Rc::clone(&root_node);
 
         for tok in tokens {
             if tok == "" {
+                // TODO: handle this
             } else {
                 let child = Rc::new(RefCell::new(RiverNode::new(tok)));
                 {
