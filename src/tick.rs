@@ -1,5 +1,3 @@
-use river::RiverNode;
-
 #[derive(Clone, Copy, Debug)]
 pub enum Tick {
     Snow,
@@ -42,9 +40,9 @@ impl Tick {
         }
     }
 
-    pub fn run(self, node: &mut RiverNode) {
-        println!("{:?} ticked", node.node_type);
-    }
+    // pub fn run(self, node: &mut RiverNode) {
+        // println!("{:?} ticked", node.node_type);
+    // }
 
     // pub fn run(self, node: RefMut<RiverNode>) {
         // use self::PropagationOrder::*;

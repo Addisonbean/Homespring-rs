@@ -59,7 +59,10 @@ impl RiverNodeType {
     pub fn from_name(name: &str) -> RiverNodeType {
         // unimplemented!();
         use self::RiverNodeType::*;
-        match name {
+        match &name.to_lowercase()[..] {
+            "universe" => Universe,
+            "bear" => Bear,
+            "snowmelt" => Snowmelt,
             _ => Other(name.to_owned()),
         }
     }
@@ -110,17 +113,30 @@ impl RiverNode {
                 for i in 0..self.children.len() {
                     self.borrow_mut_child(i).tick(tick);
                 }
-                // println!("{:?} ticked", self.node_type);
-                tick.run(self);
+                self.run_tick(tick);
             },
             PreOrder => {
-                // println!("{:?} ticked", self.node_type);
-                tick.run(self);
+                self.run_tick(tick);
                 for i in 0..self.children.len() {
                     self.borrow_mut_child(i).tick(tick);
                 }
             },
             _ => unimplemented!(),
+        }
+    }
+
+    // I don't like this inside of RiverNode...
+    pub fn run_tick(&mut self, tick: Tick) {
+        use self::RiverNodeType::*;
+        use tick::Tick::*;
+        match self.node_type {
+            Snowmelt => {
+                if let Snow = tick {
+                    println!("it snowed");
+                }
+            },
+            _ => {
+            },
         }
     }
 
@@ -139,6 +155,7 @@ impl RiverNode {
         for tok in tokens {
             if tok == "" {
                 // TODO: handle this
+                unimplemented!();
             } else {
                 let child = Rc::new(RefCell::new(RiverNode::new(tok)));
                 {
@@ -151,7 +168,4 @@ impl RiverNode {
         root_node
     }
 }
-
-// http://www.geeksforgeeks.org/tree-traversals-inorder-preorder-and-postorder/
-// https://cs.stackexchange.com/questions/44820/what-does-pre-post-and-in-order-walk-mean-for-a-n-ary-tree
 
