@@ -2,6 +2,7 @@ use std::rc::{Rc, Weak};
 use std::cell::{RefCell, RefMut, Ref};
 
 use tick::Tick;
+use split_custom_escape::HomespringSplit;
 
 #[derive(Debug)]
 pub enum RiverNodeType {
@@ -60,9 +61,53 @@ impl RiverNodeType {
         // unimplemented!();
         use self::RiverNodeType::*;
         match &name.to_lowercase()[..] {
-            "universe" => Universe,
-            "bear" => Bear,
+            "hatchery" => Hatchery,
+            "hydro. power" => HydroPower,
             "snowmelt" => Snowmelt,
+            "shallows" => Shallows,
+            "rapids" => Rapids,
+            "append. down" => AppendDown,
+            "bear" => Bear,
+            "force. field" => ForceField,
+            "sense" => Sense,
+            "clone" => Clone,
+            "young bear" => YoungBear,
+            "bird" => Bird,
+            "upstream. killing. device" => UpstreamKillingDevice,
+            "waterfall" => Waterfall,
+            "universe" => Universe,
+            "powers" => Powers,
+            "marshy" => Marshy,
+            "insulated" => Insulted,
+            "upstream. sense" => UpstreamSense,
+            "downstream. sense" => DownstreamSense,
+            "evaporates" => Evaporates,
+            "youth. fountain" => YouthFountain,
+            "oblivion" => Oblivion,
+            "pump" => Pump,
+            "range. sense" => RangeSense,
+            "fear" => Fear,
+            "reverse. up" => ReverseUp,
+            "reverse. down" => ReverseDown,
+            "time" => Time,
+            "lock" => Lock,
+            "inverse. lock" => InverseLock,
+            "young. sense" => YoungSense,
+            "switch" => Switch,
+            "young. switch" => YoungSwitch,
+            "narrows" => Narrows,
+            "append. up" => AppendUp,
+            "young. range. sense" => YoungRangeSense,
+            "net" => Net,
+            "force. down" => ForceDown,
+            "force. up" => ForceUp,
+            "spawn" => Spawn,
+            "power. invert" => PowerInvert,
+            "current" => Current,
+            "bridge" => Bridge,
+            "split" => Split,
+            "range. switch" => RangeSwitch,
+            "young. range. switch" => YoungRangeSwitch,
             _ => Other(name.to_owned()),
         }
     }
@@ -141,7 +186,8 @@ impl RiverNode {
     }
 
     pub fn parse_program(code: &str) -> Rc<RefCell<RiverNode>> {
-        let mut tokens = code.split(' ');
+        // let mut tokens = code.split(' ');
+        let mut tokens = HomespringSplit::new(code);
 
         let root_node = match tokens.next() {
             Some(name) => {
