@@ -200,8 +200,8 @@ impl RiverNode {
 
         for tok in tokens {
             if tok == "" {
-                // TODO: handle this
-                unimplemented!();
+                let parent = Weak::upgrade(&current_node.borrow().parent).unwrap();
+                current_node = parent;
             } else {
                 let child = Rc::new(RefCell::new(RiverNode::new(tok)));
                 {
