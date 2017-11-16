@@ -5,7 +5,7 @@ use tick::Tick;
 use salmon::{Salmon, Age, Direction};
 use split_custom_escape::HomespringSplit;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum RiverNodeType {
     Other(String),
     Hatchery,

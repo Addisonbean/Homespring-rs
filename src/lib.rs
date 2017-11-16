@@ -1,5 +1,5 @@
 mod river;
-pub use river::RiverNode;
+pub use river::{RiverNode, RiverNodeType};
 
 mod tick;
 pub use tick::Tick;
