@@ -126,7 +126,7 @@ pub struct RiverNode {
 
 impl RiverNode { 
     pub fn new(name: &str) -> RiverNode {
-        RiverNode {
+        let node = RiverNode {
             node_type: RiverNodeType::from_name(name),
             parent: Weak::new(),
             children: vec![],
@@ -136,7 +136,17 @@ impl RiverNode {
             water: false,
             snow: false,
             destroyed: false,
+        };
+        node.init()
+    }
+
+    pub fn init(mut self) -> RiverNode {
+        use self::RiverNodeType::*;
+        match &self.node_type {
+            &Snowmelt => self.snow = true,
+            _ => (),
         }
+        self
     }
 
     pub fn borrow_child(&self, n: usize) -> Ref<RiverNode> {
@@ -174,19 +184,20 @@ impl RiverNode {
     pub fn run_tick(&mut self, tick: Tick) {
         use self::RiverNodeType::*;
         use tick::Tick::*;
-        match self.node_type {
-            Snowmelt => {
-                if let Snow = tick {
-                    println!("it snowed");
+        match (tick, &self.node_type) {
+            (Snow, _) => {
+                for i in 0..self.children.len() {
+                    if self.borrow_child(i).snow {
+                        self.snow = true;
+                        break;
+                    }
                 }
             },
-            _ => {
-            },
+            _ => (),
         }
     }
 
     pub fn parse_program(code: &str) -> Rc<RefCell<RiverNode>> {
-        // let mut tokens = code.split(' ');
         let mut tokens = HomespringSplit::new(code);
 
         let root_node = match tokens.next() {
