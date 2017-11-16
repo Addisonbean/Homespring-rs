@@ -2,6 +2,7 @@ use std::rc::{Rc, Weak};
 use std::cell::{RefCell, RefMut, Ref};
 
 use tick::Tick;
+use salmon::{Salmon, Age, Direction};
 use split_custom_escape::HomespringSplit;
 
 #[derive(Debug)]
@@ -114,24 +115,24 @@ impl RiverNodeType {
 }
 
 #[derive(Debug)]
-pub struct RiverNode {
+pub struct RiverNode<'a> {
     pub node_type: RiverNodeType,
-    pub parent: Weak<RefCell<RiverNode>>,
-    pub children: Vec<Rc<RefCell<RiverNode>>>,
+    pub parent: Weak<RefCell<RiverNode<'a>>>,
+    pub children: Vec<Rc<RefCell<RiverNode<'a>>>>,
+    pub salmon: Vec<Salmon<'a>>,
     pub power: bool,
     pub water: bool,
     pub snow: bool,
     pub destroyed: bool,
 }
 
-impl RiverNode { 
+impl<'a> RiverNode<'a> { 
     pub fn new(name: &str) -> RiverNode {
         let node = RiverNode {
             node_type: RiverNodeType::from_name(name),
             parent: Weak::new(),
             children: vec![],
-            // TODO: these defaults may be wrong, for example when the name is "snowmelt" snow
-            // should be true
+            salmon: vec![],
             power: false,
             water: false,
             snow: false,
@@ -140,7 +141,7 @@ impl RiverNode {
         node.init()
     }
 
-    pub fn init(mut self) -> RiverNode {
+    pub fn init(mut self) -> RiverNode<'a> {
         use self::RiverNodeType::*;
         match &self.node_type {
             &Snowmelt => self.snow = true,
@@ -149,16 +150,20 @@ impl RiverNode {
         self
     }
 
-    pub fn borrow_child(&self, n: usize) -> Ref<RiverNode> {
+    pub fn borrow_child(&self, n: usize) -> Ref<RiverNode<'a>> {
         self.children[n].borrow()
     }
 
-    pub fn borrow_mut_child(&self, n: usize) -> RefMut<RiverNode> {
+    pub fn borrow_mut_child(&self, n: usize) -> RefMut<RiverNode<'a>> {
         self.children[n].borrow_mut()
     }
 
-    pub fn add_child(&mut self, child: Rc<RefCell<RiverNode>>) {
+    pub fn add_child(&mut self, child: Rc<RefCell<RiverNode<'a>>>) {
         self.children.push(child);
+    }
+
+    pub fn add_salmon(&mut self, salmon: Salmon<'a>) {
+        self.salmon.push(salmon);
     }
 
     pub fn tick(&mut self, tick: Tick) {
@@ -193,6 +198,13 @@ impl RiverNode {
                     }
                 }
             },
+            (FishHatch, &Hatchery) => {
+                self.add_salmon(Salmon {
+                    age: Age::Mature,
+                    direction: Direction::Upstream,
+                    name: "homeless"
+                });
+            },
             _ => (),
         }
     }
@@ -215,9 +227,7 @@ impl RiverNode {
                 current_node = parent;
             } else {
                 let child = Rc::new(RefCell::new(RiverNode::new(tok)));
-                {
-                    child.borrow_mut().parent = Rc::downgrade(&current_node);
-                }
+                child.borrow_mut().parent = Rc::downgrade(&current_node);
                 current_node.borrow_mut().add_child(Rc::clone(&child));
                 current_node = child;
             }
