@@ -39,29 +39,5 @@ impl Tick {
             Input => Any,
         }
     }
-
-    // pub fn run(self, node: &mut RiverNode) {
-        // println!("{:?} ticked", node.node_type);
-    // }
-
-    // pub fn run(self, node: RefMut<RiverNode>) {
-        // use self::PropagationOrder::*;
-        // match self.propagation_order() {
-            // PostOrder => {
-                // for i in 0..node.children.len() {
-                    // self.run(borrow_mut_child(i));
-                // }
-                // println!("{:?} ticked", node.node_type);
-            // },
-            // PreOrder => {
-                // println!("{:?} ticked", node.node_type);
-                // for i in 0..node.children.len() {
-                    // self.run(borrow_mut_child(i));
-                // }
-            // },
-            // _ => unimplemented!(),
-        // }
-
-    // }
 }
 

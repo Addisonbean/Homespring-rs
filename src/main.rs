@@ -1,11 +1,11 @@
 extern crate homespring;
 
-use homespring::RiverNode;
+use homespring::river::Node;
 use homespring::Tick;
 
 fn main() {
 
-    let river = RiverNode::parse_program("Universe hatchery  snowmelt");
+    let river = Node::parse_program("Universe hatchery  snowmelt");;
     let mut river = river.borrow_mut();
 
     println!("{:?}", river.snow);

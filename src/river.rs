@@ -6,7 +6,7 @@ use salmon::{Salmon, Age, Direction};
 use split_custom_escape::HomespringSplit;
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum RiverNodeType {
+pub enum NodeType {
     Other(String),
     Hatchery,
     HydroPower,
@@ -57,10 +57,10 @@ pub enum RiverNodeType {
     YoungRangeSwitch,
 }
 
-impl RiverNodeType {
-    pub fn from_name(name: &str) -> RiverNodeType {
+impl NodeType {
+    pub fn from_name(name: &str) -> NodeType {
         // unimplemented!();
-        use self::RiverNodeType::*;
+        use self::NodeType::*;
         match &name.to_lowercase()[..] {
             "hatchery" => Hatchery,
             "hydro. power" => HydroPower,
@@ -115,10 +115,10 @@ impl RiverNodeType {
 }
 
 #[derive(Debug)]
-pub struct RiverNode<'a> {
-    pub node_type: RiverNodeType,
-    pub parent: Weak<RefCell<RiverNode<'a>>>,
-    pub children: Vec<Rc<RefCell<RiverNode<'a>>>>,
+pub struct Node<'a> {
+    pub node_type: NodeType,
+    pub parent: Weak<RefCell<Node<'a>>>,
+    pub children: Vec<Rc<RefCell<Node<'a>>>>,
     pub salmon: Vec<Salmon<'a>>,
     pub power: bool,
     pub water: bool,
@@ -126,10 +126,10 @@ pub struct RiverNode<'a> {
     pub destroyed: bool,
 }
 
-impl<'a> RiverNode<'a> { 
-    pub fn new(name: &str) -> RiverNode {
-        let node = RiverNode {
-            node_type: RiverNodeType::from_name(name),
+impl<'a> Node<'a> { 
+    pub fn new(name: &str) -> Node {
+        let node = Node {
+            node_type: NodeType::from_name(name),
             parent: Weak::new(),
             children: vec![],
             salmon: vec![],
@@ -141,8 +141,8 @@ impl<'a> RiverNode<'a> {
         node.init()
     }
 
-    pub fn init(mut self) -> RiverNode<'a> {
-        use self::RiverNodeType::*;
+    pub fn init(mut self) -> Node<'a> {
+        use self::NodeType::*;
         match &self.node_type {
             &Snowmelt => self.snow = true,
             _ => (),
@@ -150,15 +150,15 @@ impl<'a> RiverNode<'a> {
         self
     }
 
-    pub fn borrow_child(&self, n: usize) -> Ref<RiverNode<'a>> {
+    pub fn borrow_child(&self, n: usize) -> Ref<Node<'a>> {
         self.children[n].borrow()
     }
 
-    pub fn borrow_mut_child(&self, n: usize) -> RefMut<RiverNode<'a>> {
+    pub fn borrow_mut_child(&self, n: usize) -> RefMut<Node<'a>> {
         self.children[n].borrow_mut()
     }
 
-    pub fn add_child(&mut self, child: Rc<RefCell<RiverNode<'a>>>) {
+    pub fn add_child(&mut self, child: Rc<RefCell<Node<'a>>>) {
         self.children.push(child);
     }
 
@@ -185,9 +185,9 @@ impl<'a> RiverNode<'a> {
         }
     }
 
-    // I don't like this inside of RiverNode...
+    // I don't like this inside of Node...
     pub fn run_tick(&mut self, tick: Tick) {
-        use self::RiverNodeType::*;
+        use self::NodeType::*;
         use tick::Tick::*;
         match (tick, &self.node_type) {
             (Snow, _) => {
@@ -209,12 +209,12 @@ impl<'a> RiverNode<'a> {
         }
     }
 
-    pub fn parse_program(code: &str) -> Rc<RefCell<RiverNode>> {
+    pub fn parse_program(code: &str) -> Rc<RefCell<Node>> {
         let mut tokens = HomespringSplit::new(code);
 
         let root_node = match tokens.next() {
             Some(name) => {
-                Rc::new(RefCell::new(RiverNode::new(name)))
+                Rc::new(RefCell::new(Node::new(name)))
             },
             None => unimplemented!(), // it's the quine thing
         };
@@ -226,7 +226,7 @@ impl<'a> RiverNode<'a> {
                 let parent = Weak::upgrade(&current_node.borrow().parent).unwrap();
                 current_node = parent;
             } else {
-                let child = Rc::new(RefCell::new(RiverNode::new(tok)));
+                let child = Rc::new(RefCell::new(Node::new(tok)));
                 child.borrow_mut().parent = Rc::downgrade(&current_node);
                 current_node.borrow_mut().add_child(Rc::clone(&child));
                 current_node = child;
