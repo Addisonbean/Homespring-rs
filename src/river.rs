@@ -120,9 +120,9 @@ pub struct Node<'a> {
     pub parent: Weak<RefCell<Node<'a>>>,
     pub children: Vec<Rc<RefCell<Node<'a>>>>,
     pub salmon: Vec<Salmon<'a>>,
-    pub power: bool,
-    pub water: bool,
-    pub snow: bool,
+    pub powered: bool,
+    pub watered: bool,
+    pub snowy: bool,
     pub destroyed: bool,
 }
 
@@ -133,9 +133,9 @@ impl<'a> Node<'a> {
             parent: Weak::new(),
             children: vec![],
             salmon: vec![],
-            power: false,
-            water: false,
-            snow: false,
+            powered: false,
+            watered: false,
+            snowy: false,
             destroyed: false,
         };
         node.init()
@@ -144,7 +144,7 @@ impl<'a> Node<'a> {
     pub fn init(mut self) -> Node<'a> {
         use self::NodeType::*;
         match &self.node_type {
-            &Snowmelt => self.snow = true,
+            &Snowmelt => self.snowy = true,
             _ => (),
         }
         self
@@ -185,19 +185,29 @@ impl<'a> Node<'a> {
         }
     }
 
-    // I don't like this inside of Node...
+    // TODO: rewrite this, it's crap
+    // I don't like this inside of Node... (or do I...?)
     pub fn run_tick(&mut self, tick: Tick) {
         use self::NodeType::*;
         use tick::Tick::*;
         match (tick, &self.node_type) {
             (Snow, _) => {
                 for i in 0..self.children.len() {
-                    if self.borrow_child(i).snow {
-                        self.snow = true;
+                    if self.borrow_child(i).snowy {
+                        self.become_snowy();
                         break;
                     }
                 }
             },
+            (Water, _) => {
+                for i in 0..self.children.len() {
+                    if self.borrow_child(i).watered {
+                        self.become_watered();
+                        break;
+                    }
+                }
+            },
+            (Power, &HydroPower) => self.powered = self.watered,
             (FishHatch, &Hatchery) => {
                 self.add_salmon(Salmon {
                     age: Age::Mature,
@@ -207,6 +217,20 @@ impl<'a> Node<'a> {
             },
             _ => (),
         }
+    }
+
+    // TODO: I don't like this...
+    pub fn become_snowy(&mut self) {
+        use self::NodeType::*;
+        self.snowy = true;
+        match self.node_type {
+            HydroPower => self.destroyed = true,
+            _ => (),
+        }
+    }
+
+    pub fn become_watered(&mut self) {
+        self.watered = true;
     }
 
     pub fn parse_program(code: &str) -> Rc<RefCell<Node>> {

@@ -5,16 +5,16 @@ use homespring::Tick;
 
 fn main() {
 
-    let river = Node::parse_program("Universe hatchery  snowmelt");;
+    let river = Node::parse_program("Universe hatchery  snowymelt");;
     let mut river = river.borrow_mut();
 
-    println!("{:?}", river.snow);
-    println!("{:?}", river.borrow_child(1).snow);
+    println!("{:?}", river.snowy);
+    println!("{:?}", river.borrow_child(1).snowy);
 
     river.tick(Tick::Snow);
 
-    println!("{:?}", river.snow);
-    println!("{:?}", river.borrow_child(1).snow);
+    println!("{:?}", river.snowy);
+    println!("{:?}", river.borrow_child(1).snowy);
 
     river.tick(Tick::FishHatch);
     println!("{:?}", river.borrow_child(0).salmon.len());
