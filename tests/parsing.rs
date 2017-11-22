@@ -18,3 +18,17 @@ fn basic_program() {
     assert_eq!(sub_child.children.len(), 0);
 }
 
+#[test]
+fn empty_nodes() {
+    let river = Node::parse_program("a b  c  d e");
+    let root_node = river.borrow();
+
+    let c = root_node.borrow_child(1);
+    let d = root_node.borrow_child(2);
+    let e = d.borrow_child(0);
+
+    assert_eq!(c.node_type, NodeType::Other("c".to_owned()));
+    assert_eq!(d.node_type, NodeType::Other("d".to_owned()));
+    assert_eq!(e.node_type, NodeType::Other("e".to_owned()));
+}
+
