@@ -2,6 +2,7 @@ extern crate homespring;
 
 use homespring::river::Node;
 use homespring::Tick;
+use homespring::salmon::*;
 
 fn main() {
 
@@ -18,5 +19,16 @@ fn main() {
 
     river.tick(Tick::FishHatch);
     println!("{:?}", river.borrow_child(0).salmon.len());
+
+    // ---
+
+    let s = Salmon {
+        age: Age::Young,
+        direction: Direction::Downstream,
+        name: "fishy fish\n",
+    };
+    let mut river = Node::new("universe");
+    river.add_salmon(s);
+    river.run_tick(Tick::FishDown);
 
 }

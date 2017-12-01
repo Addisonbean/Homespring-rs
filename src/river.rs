@@ -1,3 +1,6 @@
+#[cfg(test)]
+extern crate gag;
+
 use std::rc::{Rc, Weak};
 use std::cell::{RefCell, RefMut, Ref};
 
@@ -141,7 +144,7 @@ impl<'a> Node<'a> {
         node.init()
     }
 
-    pub fn init(mut self) -> Node<'a> {
+    fn init(mut self) -> Node<'a> {
         use self::NodeType::*;
         match &self.node_type {
             &Snowmelt => self.snowy = true,
@@ -208,6 +211,16 @@ impl<'a> Node<'a> {
                 }
             },
             (Power, &HydroPower) => self.powered = self.watered,
+            (FishDown, _) => match Weak::upgrade(&self.parent) {
+                Some(n) => (),
+                None => {
+                    for s in &self.salmon {
+                        // write!(
+                        print!("{}", s.name);
+                    }
+                    self.salmon = vec![];
+                },
+            },
             (FishHatch, &Hatchery) => {
                 self.add_salmon(Salmon {
                     age: Age::Mature,
@@ -259,4 +272,27 @@ impl<'a> Node<'a> {
         root_node
     }
 }
+
+// #[test]
+// fn print_salmon_name() {
+    // use std::io::Read;
+    // use self::gag::BufferRedirect;
+    // let name = "fishy fish";
+    // let s = Salmon {
+        // age: Age::Young,
+        // direction: Direction::Downstream,
+        // name,
+    // };
+    // let mut river = Node::new("universe");
+    // river.add_salmon(s);
+
+    // let mut out = String::new();
+    // let mut buf = BufferRedirect::stdout().unwrap();
+
+    // river.run_tick(Tick::FishDown);
+    // buf.read_to_string(&mut out);
+
+    // assert_eq!(0, river.salmon.len());
+    // assert_eq!(&out[..], name);
+// }
 

@@ -3,4 +3,5 @@ name = "homespring"
 version = "0.1.0"
 authors = ["Addison Bean <addisonbean@gmail.com>"]
 
-[dependencies]
+[dev-dependencies]
+gag = "0.1.9"
