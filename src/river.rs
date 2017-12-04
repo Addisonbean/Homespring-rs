@@ -125,8 +125,11 @@ pub struct Node<'a> {
     pub children: Vec<Rc<RefCell<Node<'a>>>>,
     pub salmon: Vec<Salmon<'a>>,
     pub powered: bool,
+    pub block_power: bool,
     pub watered: bool,
+    pub block_water: bool,
     pub snowy: bool,
+    pub block_snow: bool,
     pub destroyed: bool,
 }
 
@@ -138,8 +141,11 @@ impl<'a> Node<'a> {
             children: vec![],
             salmon: vec![],
             powered: false,
+            block_power: false,
             watered: false,
+            block_water: false,
             snowy: false,
+            block_snow: false,
             destroyed: false,
         };
         node.init()
@@ -149,6 +155,7 @@ impl<'a> Node<'a> {
         use self::NodeType::*;
         match &self.node_type {
             &Snowmelt => self.snowy = true,
+            &Powers => self.powered = true,
             _ => (),
         }
         self
@@ -222,7 +229,7 @@ impl<'a> Node<'a> {
                     self.salmon = vec![];
                 },
             },
-            (FishHatch, &Hatchery) => {
+            (FishHatch, &Hatchery) => if self.is_powered() {
                 self.add_salmon(Salmon {
                     age: Age::Mature,
                     direction: Direction::Upstream,
@@ -245,6 +252,18 @@ impl<'a> Node<'a> {
 
     pub fn become_watered(&mut self) {
         self.watered = true;
+    }
+
+    pub fn is_powered(&self) -> bool {
+        if self.block_power {
+            false
+        } else if self.powered {
+            true
+        } else {
+            self.children.iter().any(|c| {
+                c.borrow_mut().is_powered()
+            })
+        }
     }
 
     pub fn parse_program(code: &str) -> Program {

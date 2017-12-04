@@ -7,7 +7,7 @@ use homespring::Program;
 
 fn main() {
 
-    let river = Node::parse_program("Universe hatchery  snowymelt").to_node().unwrap();
+    let river = Node::parse_program("Universe hatchery powers   snowymelt").to_node().unwrap();
     let mut river = river.borrow_mut();
 
     println!("{:?}", river.snowy);
