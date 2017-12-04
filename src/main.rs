@@ -3,10 +3,11 @@ extern crate homespring;
 use homespring::river::Node;
 use homespring::Tick;
 use homespring::salmon::*;
+use homespring::Program;
 
 fn main() {
 
-    let river = Node::parse_program("Universe hatchery  snowymelt");;
+    let river = Node::parse_program("Universe hatchery  snowymelt").to_node().unwrap();
     let mut river = river.borrow_mut();
 
     println!("{:?}", river.snowy);
@@ -30,5 +31,10 @@ fn main() {
     let mut river = Node::new("universe");
     river.add_salmon(s);
     river.run_tick(Tick::FishDown);
+
+    // ---
+    
+    let mut p = Program::Quine;
+    p.execute();
 
 }

@@ -4,7 +4,7 @@ use homespring::river::{Node, NodeType};
 
 #[test]
 fn basic_program() {
-    let river = Node::parse_program("a b c");
+    let river = Node::parse_program("a b c").to_node().unwrap();
     let root_node = river.borrow();
 
     assert_eq!(root_node.node_type, NodeType::Other("a".to_owned()));
@@ -20,7 +20,7 @@ fn basic_program() {
 
 #[test]
 fn empty_nodes() {
-    let river = Node::parse_program("a b  c  d e");
+    let river = Node::parse_program("a b  c  d e").to_node().unwrap();
     let root_node = river.borrow();
 
     let c = root_node.borrow_child(1);

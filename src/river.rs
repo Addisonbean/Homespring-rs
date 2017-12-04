@@ -7,6 +7,7 @@ use std::cell::{RefCell, RefMut, Ref};
 use tick::Tick;
 use salmon::{Salmon, Age, Direction};
 use split_custom_escape::HomespringSplit;
+use program::Program;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum NodeType {
@@ -246,14 +247,14 @@ impl<'a> Node<'a> {
         self.watered = true;
     }
 
-    pub fn parse_program(code: &str) -> Rc<RefCell<Node>> {
+    pub fn parse_program(code: &str) -> Program {
         let mut tokens = HomespringSplit::new(code);
 
         let root_node = match tokens.next() {
             Some(name) => {
                 Rc::new(RefCell::new(Node::new(name)))
             },
-            None => unimplemented!(), // it's the quine thing
+            None => return Program::Quine,
         };
 
         let mut current_node = Rc::clone(&root_node);
@@ -269,7 +270,7 @@ impl<'a> Node<'a> {
                 current_node = child;
             }
         }
-        root_node
+        Program::River(root_node)
     }
 }
 
