@@ -15,8 +15,8 @@ pub enum NodeType {
     Hatchery,
     HydroPower,
     Snowmelt,
-    Shallows,
-    Rapids,
+    Shallows(u8),
+    Rapids(u8),
     AppendDown,
     Bear,
     ForceField,
@@ -69,8 +69,8 @@ impl NodeType {
             "hatchery" => Hatchery,
             "hydro. power" => HydroPower,
             "snowmelt" => Snowmelt,
-            "shallows" => Shallows,
-            "rapids" => Rapids,
+            "shallows" => Shallows(2),
+            "rapids" => Rapids(2),
             "append. down" => AppendDown,
             "bear" => Bear,
             "force. field" => ForceField,
@@ -177,6 +177,26 @@ impl<'a> Node<'a> {
         self.salmon.push(salmon);
     }
 
+    // something to move fish up and down stream
+    pub fn move_salmon(&mut self, direction: Direction) {
+        match direction {
+            Direction::Downstream => {
+                match self.parent.upgrade() {
+                    Some(p) => {
+                        p.borrow_mut().salmon.append(&mut self.salmon);
+                    },
+                    None => {
+                        for s in &self.salmon {
+                            print!("{}", s.name);
+                        }
+                        self.salmon = vec![];
+                    },
+                }
+            },
+            Direction::Upstream => unimplemented!(),
+        }
+    }
+
     pub fn tick(&mut self, tick: Tick) {
         use tick::PropagationOrder::*;
         match tick.propagation_order() {
@@ -219,16 +239,8 @@ impl<'a> Node<'a> {
                 }
             },
             (Power, &HydroPower) => self.powered = self.watered,
-            (FishDown, _) => match Weak::upgrade(&self.parent) {
-                Some(n) => (),
-                None => {
-                    for s in &self.salmon {
-                        // write!(
-                        print!("{}", s.name);
-                    }
-                    self.salmon = vec![];
-                },
-            },
+            (FishDown, _) => self.move_salmon(Direction::Downstream),
+            (FishUp, _) => self.move_salmon(Direction::Upstream),
             (FishHatch, &Hatchery) => if self.is_powered() {
                 self.add_salmon(Salmon {
                     age: Age::Mature,
@@ -280,7 +292,8 @@ impl<'a> Node<'a> {
 
         for tok in tokens {
             if tok == "" {
-                let parent = Weak::upgrade(&current_node.borrow().parent).unwrap();
+                // let parent = Weak::upgrade(&current_node.borrow().parent).unwrap();
+                let parent = current_node.borrow().parent.upgrade().unwrap();
                 current_node = parent;
             } else {
                 let child = Rc::new(RefCell::new(Node::new(tok)));
