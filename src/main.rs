@@ -26,6 +26,7 @@ fn main() {
     let s = Salmon {
         age: Age::Young,
         direction: Direction::Downstream,
+        // direction: Direction::Upstream,
         name: "fishy fish\n",
     };
     let mut river = Node::new("universe");

@@ -183,13 +183,23 @@ impl<'a> Node<'a> {
             Direction::Downstream => {
                 match self.parent.upgrade() {
                     Some(p) => {
-                        p.borrow_mut().salmon.append(&mut self.salmon);
+                        // p.borrow_mut().salmon.append(&mut self.salmon);
+                        // use this when once it stabilizes: https://doc.rust-lang.org/std/vec/struct.Vec.html#method.drain_filter
+                        let mut p = p.borrow_mut();
+                        for i in 0..(self.salmon.len()) {
+                            if self.salmon[i].direction == Direction::Downstream {
+                                let s = self.salmon.remove(i);
+                                p.salmon.push(s);
+                            }
+                        }
                     },
                     None => {
                         for s in &self.salmon {
-                            print!("{}", s.name);
+                            if s.direction == Direction::Downstream {
+                                print!("{}", s.name);
+                            }
                         }
-                        self.salmon = vec![];
+                        self.salmon.retain(|s| s.direction != Direction::Downstream);
                     },
                 }
             },

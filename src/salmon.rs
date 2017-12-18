@@ -1,10 +1,10 @@
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum Age {
     Young,
     Mature,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum Direction {
     Downstream,
     Upstream,
