@@ -119,11 +119,14 @@ impl NodeType {
 }
 
 #[derive(Debug)]
-pub struct Node<'a> {
+pub struct Node<'a, 'b> {
+    pub name: &'b str,
     pub node_type: NodeType,
-    pub parent: Weak<RefCell<Node<'a>>>,
-    pub children: Vec<Rc<RefCell<Node<'a>>>>,
+    pub parent: Weak<RefCell<Node<'a, 'b>>>,
+    pub children: Vec<Rc<RefCell<Node<'a, 'b>>>>,
     pub salmon: Vec<Salmon<'a>>,
+    pub block_salmon: bool,
+    pub very_block_salmon: bool,
     pub powered: bool,
     pub block_power: bool,
     pub watered: bool,
@@ -133,13 +136,16 @@ pub struct Node<'a> {
     pub destroyed: bool,
 }
 
-impl<'a> Node<'a> { 
-    pub fn new(name: &str) -> Node {
+impl<'a, 'b> Node<'a, 'b> { 
+    pub fn new(name: &'b str) -> Node<'a, 'b> {
         let node = Node {
+            name,
             node_type: NodeType::from_name(name),
             parent: Weak::new(),
             children: vec![],
             salmon: vec![],
+            block_salmon: false,
+            very_block_salmon: false,
             powered: false,
             block_power: false,
             watered: false,
@@ -151,7 +157,7 @@ impl<'a> Node<'a> {
         node.init()
     }
 
-    fn init(mut self) -> Node<'a> {
+    fn init(mut self) -> Node<'a, 'b> {
         use self::NodeType::*;
         match &self.node_type {
             &Snowmelt => self.snowy = true,
@@ -161,20 +167,51 @@ impl<'a> Node<'a> {
         self
     }
 
-    pub fn borrow_child(&self, n: usize) -> Ref<Node<'a>> {
+    pub fn borrow_child(&self, n: usize) -> Ref<Node<'a, 'b>> {
         self.children[n].borrow()
     }
 
-    pub fn borrow_mut_child(&self, n: usize) -> RefMut<Node<'a>> {
+    pub fn borrow_mut_child(&self, n: usize) -> RefMut<Node<'a, 'b>> {
         self.children[n].borrow_mut()
     }
 
-    pub fn add_child(&mut self, child: Rc<RefCell<Node<'a>>>) {
+    pub fn add_child(&mut self, child: Rc<RefCell<Node<'a, 'b>>>) {
         self.children.push(child);
     }
 
     pub fn add_salmon(&mut self, salmon: Salmon<'a>) {
         self.salmon.push(salmon);
+    }
+
+    // Returns the index of the child that would lead to the node
+    // with a name of `name`.
+    pub fn find_node_path(&self, name: &str) -> Option<usize> {
+        (0..self.children.len()).position(|i|
+            self.borrow_child(i).find_node(name)
+        )
+    }
+
+    // This is supposed to use an in-order search, but that doesn't
+    // really make sense for an n-ary tree...
+    // This will at least be in-order for any nodes with <= 2 children.
+    fn find_node(&self, name: &str) -> bool {
+        let len = self.children.len();
+        if len > 0 {
+            match self.borrow_child(0).find_node(name) {
+                true => return true,
+                false => (),
+            }
+        }
+        if self.name == name { return true; }
+        if len > 1 {
+            for i in 1..len {
+                match self.borrow_child(i).find_node(name) {
+                    true => return true,
+                    false => (),
+                }
+            }
+        }
+        false
     }
 
     // something to move fish up and down stream
@@ -183,13 +220,15 @@ impl<'a> Node<'a> {
             Direction::Downstream => {
                 match self.parent.upgrade() {
                     Some(p) => {
-                        // p.borrow_mut().salmon.append(&mut self.salmon);
-                        // use this when once it stabilizes: https://doc.rust-lang.org/std/vec/struct.Vec.html#method.drain_filter
+                        // Use `Vec::drain_filter` when once it stabilizes: https://doc.rust-lang.org/std/vec/struct.Vec.html#method.drain_filter
                         let mut p = p.borrow_mut();
-                        for i in 0..(self.salmon.len()) {
+                        let mut i = 0;
+                        while i != self.salmon.len() {
                             if self.salmon[i].direction == Direction::Downstream {
                                 let s = self.salmon.remove(i);
                                 p.salmon.push(s);
+                            } else {
+                                i += 1;
                             }
                         }
                     },
@@ -203,7 +242,37 @@ impl<'a> Node<'a> {
                     },
                 }
             },
-            Direction::Upstream => unimplemented!(),
+            Direction::Upstream => {
+                if self.block_salmon { return }
+                for s in self.salmon.iter().filter(|s| s.direction == Direction::Upstream) {
+                    let i = match self.find_node_path(s.name) {
+                        Some(idx) if !self.borrow_child(idx).very_block_salmon
+                            => Some(idx),
+                        _ => self.children.iter().position(|c| !c.borrow().very_block_salmon),
+                    };
+                }
+
+                // `Vec::drain_filter` could probably be used here too
+                let mut i = 0;
+                while i != self.salmon.len() {
+                    if self.salmon[i].direction == Direction::Upstream {
+                        let idx = match self.find_node_path(self.salmon[i].name) {
+                            Some(idx) if !self.borrow_child(idx).very_block_salmon
+                                => Some(idx),
+                            _ => self.children.iter().position(|c| !c.borrow().very_block_salmon),
+                        };
+                        match idx {
+                            Some(idx) => {
+                                let s = self.salmon.remove(i);
+                                self.borrow_mut_child(idx).salmon.push(s);
+                            },
+                            None => i += 1,
+                        }
+                    } else {
+                        i += 1;
+                    }
+                }
+            },
         }
     }
 
@@ -228,7 +297,7 @@ impl<'a> Node<'a> {
 
     // TODO: rewrite this, it's crap
     // I don't like this inside of Node... (or do I...?)
-    pub fn run_tick(&mut self, tick: Tick) {
+    fn run_tick(&mut self, tick: Tick) {
         use self::NodeType::*;
         use tick::Tick::*;
         match (tick, &self.node_type) {
