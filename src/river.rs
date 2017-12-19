@@ -216,6 +216,19 @@ impl<'a, 'b> Node<'a, 'b> {
 
     // something to move fish up and down stream
     pub fn move_salmon(&mut self, direction: Direction) {
+        match &mut self.node_type {
+            &mut NodeType::Shallows(ref mut i) =>
+                if *i > 0 {
+                    *i -= 1;
+                    return
+                },
+            &mut NodeType::Rapids(ref mut i) => 
+                if *i > 0 {
+                    *i -= 1;
+                    return
+                },
+            _ => (),
+        }
         match direction {
             Direction::Downstream => {
                 match self.parent.upgrade() {
@@ -244,13 +257,6 @@ impl<'a, 'b> Node<'a, 'b> {
             },
             Direction::Upstream => {
                 if self.block_salmon { return }
-                for s in self.salmon.iter().filter(|s| s.direction == Direction::Upstream) {
-                    let i = match self.find_node_path(s.name) {
-                        Some(idx) if !self.borrow_child(idx).very_block_salmon
-                            => Some(idx),
-                        _ => self.children.iter().position(|c| !c.borrow().very_block_salmon),
-                    };
-                }
 
                 // `Vec::drain_filter` could probably be used here too
                 let mut i = 0;
@@ -371,7 +377,6 @@ impl<'a, 'b> Node<'a, 'b> {
 
         for tok in tokens {
             if tok == "" {
-                // let parent = Weak::upgrade(&current_node.borrow().parent).unwrap();
                 let parent = current_node.borrow().parent.upgrade().unwrap();
                 current_node = parent;
             } else {

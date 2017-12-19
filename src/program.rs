@@ -13,7 +13,7 @@ impl<'a, 'b> Program<'a, 'b> {
         use self::Program::*;
         match self {
             &mut Quine => println!("In Homespring, the null program is not a quine."),
-            &mut River(ref mut n) => unimplemented!(),
+            &mut River(..) => unimplemented!(),
         }
     }
 
